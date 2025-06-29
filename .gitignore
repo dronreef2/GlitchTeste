@@ -1,0 +1,15 @@
+# Logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Environment variables (handled by Glitch)
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Glitch specific
+.glitch-assets
