@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Deploy DevOps no Glitch - Pronto!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease-out;
+        }
+        h1 { 
+            font-size: 3.5rem; 
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle { 
+            font-size: 1.4rem; 
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        .status {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid rgba(34, 197, 94, 0.5);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        .deploy-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: fadeInUp 1s ease-out;
+        }
+        .deploy-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .deploy-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .deploy-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        .deploy-btn.primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+        .config-section {
+            background: rgba(255,193,7,0.1);
+            border: 2px solid rgba(255,193,7,0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .config-code {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+            border-left: 4px solid #ffc107;
+        }
+        .urls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .url-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .url-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+        .checklist {
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+        .checklist-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .checklist-item input[type="checkbox"] {
+            margin-right: 1rem;
+            transform: scale(1.2);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            animation: fadeIn 2s ease-out;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .github-info {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Deploy DevOps</h1>
+            <p class="subtitle">Seu projeto está pronto para o Glitch.com!</p>
+            <div class="status">✅ DEPLOY PREPARADO COM SUCESSO</div>
+        </div>
+
+        <div class="deploy-section">
+            <h2>🌐 Deploy no Glitch - Escolha seu método:</h2>
+            
+            <div class="deploy-buttons">
+                <a href="https://glitch.com/edit/#!/import/github/dronreef2/GlitchTeste" 
+                   target="_blank" class="deploy-btn primary">
+                    <span style="font-size: 2rem;">⚡</span>
+                    <div>
+                        <strong>Import do GitHub</strong>
+                        <small style="display: block; opacity: 0.8;">Recomendado - Automático</small>
+                    </div>
+                </a>
+                
+                <a href="https://glitch.com/create" target="_blank" class="deploy-btn">
+                    <span style="font-size: 2rem;">🎯</span>
+                    <div>
+                        <strong>Deploy Manual</strong>
+                        <small style="display: block; opacity: 0.8;">Criar projeto novo</small>
+                    </div>
+                </a>
+            </div>
+
+            <div class="github-info">
+                <h4>📦 Repositório GitHub:</h4>
+                <p><strong>https://github.com/dronreef2/GlitchTeste</strong></p>
+                <button class="copy-btn" onclick="copyToClipboard('https://github.com/dronreef2/GlitchTeste')">
+                    📋 Copiar URL
+                </button>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>⚙️ Configuração Obrigatória</h3>
+            <p>Após importar, configure estas variáveis em <strong>Tools → Environment</strong>:</p>
+            <div class="config-code">
+WEB_USERNAME=admin<br>
+WEB_PASSWORD=MinhaSenh@Segura123!<br>
+NODE_ENV=production<br>
+PROJECT_NAME=meu-projeto-devops
+            </div>
+            <button class="copy-btn" onclick="copyConfig()">📋 Copiar Configuração</button>
+        </div>
+
+        <div class="deploy-section">
+            <h3>🔗 URLs do Seu Projeto</h3>
+            <p>Após o deploy (substitua "SEU-PROJETO" pelo nome real):</p>
+            
+            <div class="urls-grid">
+                <div class="url-card">
+                    <h4>🏠 Home</h4>
+                    <p>https://SEU-PROJETO.glitch.me/</p>
+                </div>
+                <div class="url-card">
+                    <h4>📊 Dashboard</h4>
+                    <p>https://SEU-PROJETO.glitch.me/dashboard</p>
+                </div>
+                <div class="url-card">
+                    <h4>🔍 Health API</h4>
+                    <p>https://SEU-PROJETO.glitch.me/api/health</p>
+                </div>
+                <div class="url-card">
+                    <h4>📈 Métricas</h4>
+                    <p>https://SEU-PROJETO.glitch.me/api/metrics</p>
+                </div>
+                <div class="url-card">
+                    <h4>📋 Logs</h4>
+                    <p>https://SEU-PROJETO.glitch.me/logs</p>
+                </div>
+                <div class="url-card">
+                    <h4>🔄 Restart</h4>
+                    <p>https://SEU-PROJETO.glitch.me/api/restart</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="checklist">
+            <h3>✅ Checklist de Validação</h3>
+            <p>Marque conforme você completa cada etapa:</p>
+            
+            <div class="checklist-item">
+                <input type="checkbox" id="check1">
+                <label for="check1">Projeto importado no Glitch sem erros</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check2">
+                <label for="check2">Variáveis de ambiente configuradas</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check3">
+                <label for="check3">Credenciais alteradas (não usar admin/admin)</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check4">
+                <label for="check4">Página inicial carregando corretamente</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check5">
+                <label for="check5">Dashboard acessível com login</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check6">
+                <label for="check6">API Health respondendo</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check7">
+                <label for="check7">Logs funcionando</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check8">
+                <label for="check8">Métricas sendo coletadas</label>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>🎉 Pronto!</h3>
+            <p>Seu projeto DevOps estará online no Glitch em minutos!</p>
+            <p style="margin-top: 1rem; opacity: 0.8;">
+                📚 Documentação completa disponível nos arquivos do projeto
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('URL copiada para a área de transferência!');
+            });
+        }
+
+        function copyConfig() {
+            const config = `WEB_USERNAME=admin
+WEB_PASSWORD=MinhaSenh@Segura123!
+NODE_ENV=production
+PROJECT_NAME=meu-projeto-devops`;
+            navigator.clipboard.writeText(config).then(function() {
+                alert('Configuração copiada! Cole no Tools → Environment do Glitch');
+            });
+        }
+
+        // Salvar estado dos checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                localStorage.setItem(this.id, this.checked);
+            });
+            
+            // Carregar estado salvo
+            const saved = localStorage.getItem(checkbox.id);
+            if (saved === 'true') {
+                checkbox.checked = true;
+            }
+        });
+    </script>
+</body>
+</html>
