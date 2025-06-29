@@ -1,6 +1,7 @@
+
 # 🚀 DevOps Platform - Glitch Edition
 
-Uma plataforma DevOps completa rodando no Glitch.com com monitoramento, dashboard e APIs para automação.
+Uma plataforma DevOps rodando no Glitch.com com monitoramento, dashboard e APIs para automação.
 
 ## ✨ Features
 
@@ -23,49 +24,6 @@ Uma plataforma DevOps completa rodando no Glitch.com com monitoramento, dashboar
 - Login: `admin` / `admin123` (altere no .env!)
 - Dashboard completo com métricas e controles
 
-### 3. APIs Disponíveis
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `/` | GET | 🏠 Página inicial |
-| `/api/health` | GET | 🔍 Health check |
-| `/api/metrics` | GET | 📊 Métricas do sistema |
-| `/dashboard` | GET | 🎛️ Dashboard (auth) |
-| `/logs` | GET | 📋 Logs (auth) |
-| `/api/restart` | POST | 🔄 Restart (auth) |
-| `/api/docs` | GET | 📚 Documentação |
-
-## ⚙️ Configuração
-
-### Variáveis de Ambiente
-
-No Glitch, vá em **Tools** → **Environment** e adicione:
-
-```env
-# Credenciais (ALTERE!)
-WEB_USERNAME=seu_usuario
-WEB_PASSWORD=sua_senha
-
-# Configurações
-NODE_ENV=production
-PROJECT_NAME=seu-projeto
-LOG_LEVEL=info
-```
-
-### Personalização
-
-1. **Alterar credenciais**:
-   - Edite `WEB_USERNAME` e `WEB_PASSWORD` no .env
-   - Ou use a interface do Glitch em Tools → Environment
-
-2. **Customizar nome do projeto**:
-   - Edite `PROJECT_NAME` no .env
-
-3. **Ajustar logs**:
-   - Mude `LOG_LEVEL` para debug, info, warn, ou error
-
-## 🔧 Desenvolvimento
-
 ### Estrutura do Projeto
 
 ```
@@ -77,11 +35,6 @@ LOG_LEVEL=info
 └── app.log           # Logs da aplicação
 ```
 
-### Logs
-
-- **Visualizar**: `https://SEU-PROJETO.glitch.me/logs`
-- **Console Glitch**: Tools → Logs
-- **Arquivo**: app.log (criado automaticamente)
 
 ### Monitoramento
 
@@ -92,16 +45,8 @@ O sistema inclui:
 - 📋 Logs estruturados
 - ⚡ Rate limiting
 
-## 🛠️ Personalização Avançada
 
-### Adicionar Novas Rotas
 
-```javascript
-// No server.js
-app.get('/api/custom', (req, res) => {
-  res.json({ message: 'Sua API customizada' });
-});
-```
 
 ### Middleware Personalizado
 
@@ -143,21 +88,9 @@ app.get('/api/external', async (req, res) => {
 - **Glitch**: Projeto, domínio, IP
 - **Performance**: Tempo de resposta, throughput
 
-## 🚨 Solução de Problemas
 
-### Problema: Site não carrega
-**Solução**: Verifique se o projeto está "acordado" no Glitch
 
-### Problema: Erro de autenticação
-**Solução**: Verifique as credenciais no .env
-
-### Problema: Logs não aparecem
-**Solução**: Verifique se o arquivo app.log foi criado
-
-### Problema: Dashboard não funciona
-**Solução**: Limpe cookies e tente novamente
-
-## 🎯 Próximos Passos
+##  Próximos Passos
 
 1. **Alterar credenciais padrão**
 2. **Personalizar dashboard**
@@ -165,12 +98,7 @@ app.get('/api/external', async (req, res) => {
 4. **Configurar webhooks**
 5. **Integrar com serviços externos**
 
-## 🆘 Suporte
 
-- 📚 **Documentação**: `/api/docs`
-- 🔍 **Health Check**: `/api/health`
-- 📊 **Status**: `/dashboard`
-- 📋 **Logs**: `/logs`
 
 ---
 
