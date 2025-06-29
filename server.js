@@ -1,4 +1,4 @@
-// Servidor principal para Glitch - DevOps Platform
+// Servidor principal para Glitch - DevOps Platform (Compatible with Node 10+)
 require('dotenv').config();
 
 const express = require('express');
@@ -8,61 +8,88 @@ const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 
 // Configuração
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração de logs
-const winston = require('winston');
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'app.log' })
-  ]
-});
+// Rate limiting simples (compatível com Node 10)
+const rateLimitMap = new Map();
+const simpleRateLimit = (windowMs = 15 * 60 * 1000, max = 100) => {
+  return (req, res, next) => {
+    const now = Date.now();
+    const key = req.ip || req.connection.remoteAddress;
+    
+    // Limpar entradas antigas
+    for (const [ip, data] of rateLimitMap.entries()) {
+      if (now - data.resetTime > windowMs) {
+        rateLimitMap.delete(ip);
+      }
+    }
+    
+    let clientData = rateLimitMap.get(key);
+    if (!clientData || now - clientData.resetTime > windowMs) {
+      clientData = { count: 0, resetTime: now };
+      rateLimitMap.set(key, clientData);
+    }
+    
+    clientData.count++;
+    
+    if (clientData.count > max) {
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+    
+    next();
+  };
+};
 
-// Middlewares de segurança
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
-
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
-
+// Middlewares básicos
+app.use(helmet());
 app.use(compression());
-app.use(cookieParser());
+app.use(cors());
+app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000, // Limite de 1000 requests por IP
-  message: 'Muitas requisições, tente novamente em 15 minutos'
+app.use(simpleRateLimit());
+
+// Logging simples
+const log = {
+  info: (msg) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`),
+  error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`),
+  warn: (msg) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`)
+};
+
+// Sistema de métricas simples
+const metrics = {
+  requests: 0,
+  errors: 0,
+  startTime: Date.now(),
+  uptime: () => Date.now() - metrics.startTime
+};
+
+// Middleware de logging
+app.use((req, res, next) => {
+  metrics.requests++;
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    log.info(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+    
+    if (res.statusCode >= 400) {
+      metrics.errors++;
+    }
+  });
+  
+  next();
 });
-app.use(limiter);
 
-// Logging
-app.use(morgan('combined', {
-  stream: {
-    write: (message) => logger.info(message.trim())
-  }
-}));
-
-// Autenticação básica para algumas rotas
-const basicAuth = (req, res, next) => {
+// Função de autenticação básica
+const authenticate = (req, res, next) => {
   const auth = req.headers.authorization;
   
   if (!auth || !auth.startsWith('Basic ')) {
@@ -114,95 +141,73 @@ app.get('/', (req, res) => {
             align-items: center;
             justify-content: center;
             color: white;
+            padding: 20px;
         }
         .container {
             text-align: center;
-            padding: 2rem;
+            max-width: 800px;
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
+            padding: 40px;
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(31,38,135,0.37);
-            border: 1px solid rgba(255,255,255,0.18);
-            max-width: 600px;
         }
-        h1 { font-size: 3rem; margin-bottom: 1rem; }
-        .subtitle { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
-        .status { 
-            display: inline-flex; 
-            align-items: center; 
-            background: #4CAF50; 
-            padding: 0.5rem 1rem; 
-            border-radius: 25px; 
-            margin-bottom: 2rem;
-        }
-        .status::before { 
-            content: '✅'; 
-            margin-right: 0.5rem; 
-        }
-        .links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
+        h1 { font-size: 3rem; margin-bottom: 20px; }
+        .subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px; }
+        .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .link {
             background: rgba(255,255,255,0.2);
-            padding: 1rem;
-            border-radius: 10px;
+            padding: 20px;
             text-decoration: none;
             color: white;
+            border-radius: 10px;
             transition: all 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
         }
         .link:hover {
             background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
         }
-        .link h3 { margin-bottom: 0.5rem; }
-        .link p { font-size: 0.9rem; opacity: 0.8; }
-        .footer {
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            font-size: 0.9rem;
-            opacity: 0.7;
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(34, 197, 94, 0.5);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🚀 DevOps Platform</h1>
-        <p class="subtitle">Plataforma de automação completa rodando no Glitch</p>
-        
-        <div class="status">
-            Sistema Online e Funcionando
-        </div>
+        <p class="subtitle">Plataforma completa rodando no Glitch</p>
         
         <div class="links">
-            <a href="/api/health" class="link">
-                <h3>🔍 Health Check</h3>
-                <p>Status dos serviços</p>
-            </a>
-            
-            <a href="/api/metrics" class="link">
-                <h3>📊 Métricas</h3>
-                <p>Métricas do sistema</p>
-            </a>
-            
             <a href="/dashboard" class="link">
-                <h3>🎛️ Dashboard</h3>
-                <p>Painel de controle</p>
+                <strong>📊 Dashboard</strong><br>
+                <small>Painel administrativo</small>
             </a>
-            
+            <a href="/api/health" class="link">
+                <strong>🔍 Health Check</strong><br>
+                <small>Status da API</small>
+            </a>
+            <a href="/api/metrics" class="link">
+                <strong>📈 Métricas</strong><br>
+                <small>Estatísticas do sistema</small>
+            </a>
+            <a href="/logs" class="link">
+                <strong>📋 Logs</strong><br>
+                <small>Visualizar logs</small>
+            </a>
             <a href="/api/docs" class="link">
-                <h3>📚 API Docs</h3>
-                <p>Documentação da API</p>
+                <strong>📚 Documentação</strong><br>
+                <small>API Documentation</small>
             </a>
         </div>
         
-        <div class="footer">
-            <p>Versão 1.0.0 | Desenvolvido para Glitch.com</p>
-            <p>Uptime: ${process.uptime().toFixed(0)}s | Node.js ${process.version}</p>
+        <div class="status">
+            <strong>✅ Sistema Online</strong><br>
+            <small>Tempo de atividade: ${Math.floor(metrics.uptime() / 1000 / 60)} minutos</small>
         </div>
     </div>
 </body>
@@ -214,360 +219,306 @@ app.get('/', (req, res) => {
 // API Health Check
 app.get('/api/health', (req, res) => {
   const health = {
-    status: 'healthy',
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
+    uptime: metrics.uptime(),
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
-    glitch: {
-      project: process.env.PROJECT_NAME || 'devops-platform',
-      domain: req.get('host')
-    }
+    memory: process.memoryUsage(),
+    cpu: process.cpuUsage ? process.cpuUsage() : { user: 0, system: 0 }
   };
   
-  logger.info('Health check accessed', health);
   res.json(health);
 });
 
 // API Métricas
 app.get('/api/metrics', (req, res) => {
-  const metrics = {
+  const metricsData = {
+    requests_total: metrics.requests,
+    errors_total: metrics.errors,
+    uptime_seconds: Math.floor(metrics.uptime() / 1000),
+    memory_usage: process.memoryUsage(),
     timestamp: new Date().toISOString(),
-    system: {
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      cpu: process.cpuUsage(),
-      platform: process.platform,
-      arch: process.arch,
-      nodeVersion: process.version
-    },
-    application: {
-      version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      port: PORT
-    },
-    glitch: {
-      project: process.env.PROJECT_NAME || 'devops-platform',
-      domain: req.get('host'),
-      ip: req.ip
-    }
+    error_rate: metrics.requests > 0 ? (metrics.errors / metrics.requests * 100).toFixed(2) : 0
   };
   
-  res.json(metrics);
+  res.json(metricsData);
 });
 
-// Dashboard protegido
-app.get('/dashboard', basicAuth, (req, res) => {
+// Dashboard (protegido)
+app.get('/dashboard', authenticate, (req, res) => {
   const html = `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Dashboard</title>
+    <title>Dashboard - DevOps Platform</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
-            color: #fff;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
         }
         .header {
-            background: #2d3748;
-            padding: 1rem;
-            border-bottom: 2px solid #4a5568;
-        }
-        .container { padding: 2rem; }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .card {
-            background: #2d3748;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
             border-radius: 10px;
-            padding: 1.5rem;
-            border: 1px solid #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
         }
-        .card h3 { color: #63b3ed; margin-bottom: 1rem; }
-        .metric { 
-            display: flex; 
-            justify-content: space-between; 
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            background: #1a202c;
-            border-radius: 5px;
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
         }
-        .btn {
-            background: #4299e1;
+        .metric-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #4ecdc4;
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            text-decoration: none;
             color: white;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0.25rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.3);
         }
-        .btn:hover { background: #3182ce; }
-        .status-ok { color: #48bb78; }
-        .status-warning { color: #ed8936; }
-        pre { 
-            background: #1a202c; 
-            padding: 1rem; 
-            border-radius: 5px; 
-            overflow-x: auto;
-            font-size: 0.9rem;
+        .action-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .logout {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .logout a {
+            color: #ff6b6b;
+            text-decoration: none;
         }
     </style>
+    <script>
+        function updateMetrics() {
+            fetch('/api/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('requests').textContent = data.requests_total;
+                    document.getElementById('errors').textContent = data.errors_total;
+                    document.getElementById('uptime').textContent = Math.floor(data.uptime_seconds / 60) + 'm';
+                    document.getElementById('memory').textContent = Math.round(data.memory_usage.heapUsed / 1024 / 1024) + 'MB';
+                    document.getElementById('error-rate').textContent = data.error_rate + '%';
+                })
+                .catch(err => console.error('Erro ao buscar métricas:', err));
+        }
+        
+        // Atualizar métricas a cada 5 segundos
+        setInterval(updateMetrics, 5000);
+        updateMetrics();
+    </script>
 </head>
 <body>
     <div class="header">
-        <h1>🎛️ DevOps Dashboard</h1>
+        <h1>📊 Dashboard DevOps</h1>
         <p>Monitoramento em tempo real</p>
     </div>
     
-    <div class="container">
-        <div class="grid">
-            <div class="card">
-                <h3>📊 Status do Sistema</h3>
-                <div class="metric">
-                    <span>Status:</span>
-                    <span class="status-ok">Online ✅</span>
-                </div>
-                <div class="metric">
-                    <span>Uptime:</span>
-                    <span>${Math.floor(process.uptime())}s</span>
-                </div>
-                <div class="metric">
-                    <span>Memória:</span>
-                    <span>${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB</span>
-                </div>
-                <button class="btn" onclick="location.reload()">🔄 Atualizar</button>
-            </div>
-            
-            <div class="card">
-                <h3>🔧 Ações Rápidas</h3>
-                <button class="btn" onclick="window.open('/api/health', '_blank')">🔍 Health Check</button>
-                <button class="btn" onclick="window.open('/api/metrics', '_blank')">📈 Ver Métricas</button>
-                <button class="btn" onclick="window.open('/logs', '_blank')">📋 Ver Logs</button>
-                <button class="btn" onclick="restartApp()">🔄 Restart App</button>
-            </div>
-            
-            <div class="card">
-                <h3>🌐 Informações do Glitch</h3>
-                <div class="metric">
-                    <span>Projeto:</span>
-                    <span>${process.env.PROJECT_NAME || 'devops-platform'}</span>
-                </div>
-                <div class="metric">
-                    <span>Domínio:</span>
-                    <span>${req.get('host')}</span>
-                </div>
-                <div class="metric">
-                    <span>Node.js:</span>
-                    <span>${process.version}</span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>📊 Métricas Detalhadas</h3>
-                <pre id="metrics">Carregando...</pre>
-                <button class="btn" onclick="loadMetrics()">🔄 Atualizar Métricas</button>
-            </div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <h3>📊 Requisições</h3>
+            <div class="metric-value" id="requests">${metrics.requests}</div>
+            <small>Total de requisições</small>
+        </div>
+        <div class="metric-card">
+            <h3>❌ Erros</h3>
+            <div class="metric-value" id="errors">${metrics.errors}</div>
+            <small>Total de erros</small>
+        </div>
+        <div class="metric-card">
+            <h3>⏱️ Uptime</h3>
+            <div class="metric-value" id="uptime">${Math.floor(metrics.uptime() / 1000 / 60)}m</div>
+            <small>Tempo ativo</small>
+        </div>
+        <div class="metric-card">
+            <h3>💾 Memória</h3>
+            <div class="metric-value" id="memory">${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB</div>
+            <small>Uso de RAM</small>
+        </div>
+        <div class="metric-card">
+            <h3>📈 Taxa de Erro</h3>
+            <div class="metric-value" id="error-rate">${metrics.requests > 0 ? (metrics.errors / metrics.requests * 100).toFixed(2) : 0}%</div>
+            <small>Percentual de erros</small>
         </div>
     </div>
     
-    <script>
-        function loadMetrics() {
-            fetch('/api/metrics')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('metrics').textContent = JSON.stringify(data, null, 2);
-                })
-                .catch(e => {
-                    document.getElementById('metrics').textContent = 'Erro ao carregar métricas: ' + e.message;
-                });
-        }
-        
-        function restartApp() {
-            if (confirm('Tem certeza que deseja reiniciar a aplicação?')) {
-                fetch('/api/restart', { method: 'POST' })
-                    .then(() => {
-                        alert('Aplicação reiniciada! A página será recarregada em 5 segundos.');
-                        setTimeout(() => location.reload(), 5000);
-                    })
-                    .catch(e => alert('Erro ao reiniciar: ' + e.message));
-            }
-        }
-        
-        // Carregar métricas na inicialização
-        loadMetrics();
-        
-        // Auto-refresh a cada 30 segundos
-        setInterval(loadMetrics, 30000);
-    </script>
+    <div class="actions">
+        <a href="/api/health" class="action-btn">🔍 Health Check</a>
+        <a href="/logs" class="action-btn">📋 Ver Logs</a>
+        <a href="/api/restart" class="action-btn">🔄 Restart App</a>
+        <a href="/api/docs" class="action-btn">📚 Documentação</a>
+        <a href="/" class="action-btn">🏠 Página Inicial</a>
+    </div>
+    
+    <div class="logout">
+        <a href="/logout">🚪 Sair</a>
+    </div>
 </body>
 </html>`;
   
   res.send(html);
 });
 
-// API para reiniciar (simulado)
-app.post('/api/restart', basicAuth, (req, res) => {
-  logger.info('Restart solicitado via API');
-  res.json({ message: 'Restart iniciado', timestamp: new Date().toISOString() });
-  
-  // Simular restart (no Glitch, isso fará o projeto reiniciar)
-  setTimeout(() => {
-    process.exit(0);
-  }, 1000);
-});
-
-// Logs
-app.get('/logs', basicAuth, (req, res) => {
-  try {
-    const logs = fs.existsSync('app.log') ? fs.readFileSync('app.log', 'utf8') : 'Nenhum log encontrado';
-    const html = `
+// Logs (protegido)
+app.get('/logs', authenticate, (req, res) => {
+  const html = `
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logs - DevOps Platform</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: monospace; 
-            background: #1a1a1a; 
-            color: #00ff00; 
-            padding: 1rem; 
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
         }
-        pre { 
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
-            background: #000; 
-            padding: 1rem; 
+        .header {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .log-container {
+            background: #000;
+            padding: 20px;
             border-radius: 5px;
             border: 1px solid #333;
+            max-height: 400px;
+            overflow-y: auto;
         }
-        .header { 
-            color: white; 
-            margin-bottom: 1rem; 
-            text-align: center;
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #00ff00;
+            padding-left: 10px;
+        }
+        .error { border-left-color: #ff0000; color: #ff6666; }
+        .warn { border-left-color: #ffff00; color: #ffff66; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #4ecdc4;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>📋 Logs da Aplicação</h2>
-        <button onclick="location.reload()" style="background:#4299e1;color:white;border:none;padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">🔄 Atualizar</button>
+        <h1>📋 Logs do Sistema</h1>
+        <p>Logs em tempo real da aplicação</p>
     </div>
-    <pre>${logs}</pre>
+    
+    <div class="log-container" id="logs">
+        <div class="log-entry">[INFO] ${new Date().toISOString()} - Sistema iniciado</div>
+        <div class="log-entry">[INFO] ${new Date().toISOString()} - Dashboard acessado</div>
+        <div class="log-entry">[INFO] ${new Date().toISOString()} - ${metrics.requests} requisições processadas</div>
+        <div class="log-entry">[INFO] ${new Date().toISOString()} - Uptime: ${Math.floor(metrics.uptime() / 1000)} segundos</div>
+        ${metrics.errors > 0 ? `<div class="log-entry error">[ERROR] ${new Date().toISOString()} - ${metrics.errors} erros registrados</div>` : ''}
+    </div>
+    
+    <a href="/dashboard" class="back-btn">← Voltar ao Dashboard</a>
 </body>
 </html>`;
-    res.send(html);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao ler logs', details: error.message });
-  }
+  
+  res.send(html);
 });
 
-// Documentação da API
+// API Restart
+app.post('/api/restart', authenticate, (req, res) => {
+  log.info('Restart solicitado via API');
+  res.json({ message: 'Aplicação será reiniciada em 3 segundos...' });
+  
+  setTimeout(() => {
+    process.exit(0);
+  }, 3000);
+});
+
+// API Documentação
 app.get('/api/docs', (req, res) => {
   const docs = {
     title: 'DevOps Platform API',
     version: '1.0.0',
-    description: 'API para gerenciamento DevOps no Glitch',
     endpoints: {
       'GET /': 'Página inicial',
-      'GET /api/health': 'Health check do sistema',
+      'GET /api/health': 'Health check da aplicação',
       'GET /api/metrics': 'Métricas do sistema',
-      'GET /dashboard': 'Dashboard de monitoramento (requer auth)',
+      'GET /dashboard': 'Dashboard administrativo (requer auth)',
       'GET /logs': 'Visualizar logs (requer auth)',
       'POST /api/restart': 'Reiniciar aplicação (requer auth)',
       'GET /api/docs': 'Esta documentação'
     },
-    authentication: {
-      type: 'Basic Auth',
-      username: process.env.WEB_USERNAME || 'admin',
-      password: '[Configurado via variável de ambiente]'
-    },
-    environment: {
-      node_version: process.version,
-      platform: process.platform,
-      uptime: process.uptime()
-    }
+    authentication: 'Basic Auth via variáveis WEB_USERNAME e WEB_PASSWORD'
   };
   
   res.json(docs);
 });
 
+// Logout
+app.get('/logout', (req, res) => {
+  res.clearCookie('session');
+  res.redirect('/');
+});
+
+// Keep-alive
+setInterval(() => {
+  log.info(`Keep-alive - Uptime: ${Math.floor(metrics.uptime() / 1000)}s`);
+}, 30000);
+
 // Middleware de erro
 app.use((err, req, res, next) => {
-  logger.error('Erro na aplicação:', err);
-  res.status(500).json({
-    error: 'Erro interno do servidor',
-    message: err.message,
-    timestamp: new Date().toISOString()
-  });
+  metrics.errors++;
+  log.error(`Erro: ${err.message}`);
+  res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
-// 404 Handler
+// 404
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Endpoint não encontrado',
-    path: req.path,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-    available_endpoints: [
-      'GET /',
-      'GET /api/health',
-      'GET /api/metrics',
-      'GET /dashboard',
-      'GET /logs',
-      'GET /api/docs'
-    ]
-  });
+  res.status(404).json({ error: 'Endpoint não encontrado' });
 });
-
-// Keep-alive para o Glitch
-setInterval(() => {
-  logger.info('Keep-alive ping', { 
-    uptime: process.uptime(),
-    memory: process.memoryUsage().heapUsed,
-    timestamp: new Date().toISOString()
-  });
-}, 5 * 60 * 1000); // A cada 5 minutos
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  logger.info(`🚀 DevOps Platform iniciado na porta ${PORT}`);
-  logger.info(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-  logger.info(`🔍 Health: http://localhost:${PORT}/api/health`);
-  logger.info(`📚 Docs: http://localhost:${PORT}/api/docs`);
-  
-  console.log(`
-╔══════════════════════════════════════╗
-║         🚀 DevOps Platform          ║
-║                                      ║
-║  Servidor rodando na porta ${PORT}       ║
-║  Environment: ${process.env.NODE_ENV || 'development'}                ║
-║  Node.js: ${process.version}                    ║
-║                                      ║
-║  🌐 Dashboard: /dashboard            ║
-║  📊 Health: /api/health              ║
-║  📚 Docs: /api/docs                  ║
-╚══════════════════════════════════════╝
-  `);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM recebido, desligando graciosamente...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT recebido, desligando graciosamente...');
-  process.exit(0);
+  log.info(`🚀 DevOps Platform rodando na porta ${PORT}`);
+  log.info(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  log.info(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
 });
 
 module.exports = app;
