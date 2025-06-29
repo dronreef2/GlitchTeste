@@ -1,0 +1,155 @@
+# Regras de alerta para o Prometheus
+
+groups:
+  - name: devops-platform.rules
+    rules:
+      # Alertas de saúde da aplicação
+      - alert: ApplicationDown
+        expr: up{job="devops-platform"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Aplicação DevOps Platform está fora do ar"
+          description: "A aplicação não está respondendo há mais de 1 minuto"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta taxa de erros HTTP"
+          description: "Taxa de erros HTTP 5xx acima de 10% nos últimos 5 minutos"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto tempo de resposta"
+          description: "95% das requisições estão levando mais de 2 segundos"
+
+      # Alertas de sistema
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de CPU"
+          description: "Uso de CPU acima de 80% por mais de 5 minutos"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alto uso de memória"
+          description: "Uso de memória acima de 90% por mais de 5 minutos"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pouco espaço em disco"
+          description: "Espaço em disco abaixo de 10%"
+
+      # Alertas de banco de dados
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL está fora do ar"
+          description: "Banco de dados PostgreSQL não está respondendo"
+
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Muitas conexões com o banco"
+          description: "Número de conexões com o banco acima de 80% do limite"
+
+      # Alertas de Redis
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis está fora do ar"
+          description: "Cache Redis não está respondendo"
+
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de memória do Redis"
+          description: "Uso de memória do Redis acima de 90%"
+
+      # Alertas de container
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container com alto uso de CPU"
+          description: "Container {{ $labels.name }} usando mais de 80% de CPU"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""} * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container com alto uso de memória"
+          description: "Container {{ $labels.name }} usando mais de 90% da memória disponível"
+
+      # Alertas de deploy
+      - alert: DeploymentFailed
+        expr: increase(deployment_failed_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deploy falhou"
+          description: "Deploy falhou nos últimos 10 minutos"
+
+      - alert: HighDeploymentTime
+        expr: deployment_duration_seconds > 1800
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deploy demorado"
+          description: "Deploy levou mais de 30 minutos para completar"
+
+      # Alertas de backup
+      - alert: BackupFailed
+        expr: increase(backup_failed_total[24h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup falhou"
+          description: "Backup falhou nas últimas 24 horas"
+
+      - alert: BackupOld
+        expr: time() - backup_last_success_timestamp > 86400
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup desatualizado"
+          description: "Último backup bem-sucedido há mais de 24 horas"

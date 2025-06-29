@@ -1,0 +1,27 @@
+# .prettierignore
+
+# Dependências
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# Git
+.git/
+
+# Arquivos de configuração específicos
+package-lock.json
+*.min.js
+*.min.css
