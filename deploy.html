@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deploy DevOps Platform no Glitch</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 1rem;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.37);
+            border: 1px solid rgba(255,255,255,0.18);
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 { font-size: 3rem; margin-bottom: 1rem; }
+        .subtitle { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .btn-primary {
+            background: #ff4757;
+            border-color: #ff6b7a;
+        }
+        .btn-primary:hover {
+            background: #ff3742;
+        }
+        .instructions {
+            background: rgba(0,0,0,0.2);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        .instructions h3 {
+            margin-bottom: 1rem;
+            color: #63b3ed;
+        }
+        .instructions ol {
+            margin-left: 1.5rem;
+        }
+        .instructions li {
+            margin: 0.5rem 0;
+        }
+        .code {
+            background: rgba(0,0,0,0.3);
+            padding: 0.5rem;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 0.5rem 0;
+        }
+        .warning {
+            background: rgba(255,69,0,0.2);
+            border: 1px solid rgba(255,69,0,0.5);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 DevOps Platform</h1>
+        <p class="subtitle">Deploy rápido e fácil no Glitch.com</p>
+        
+        <div class="buttons">
+            <a href="https://glitch.com/edit/#!/remix/github/seu-usuario/seu-repo" class="btn btn-primary">
+                ⚡ Remix no Glitch
+            </a>
+            <a href="https://github.com/new/import" class="btn">
+                📁 Import GitHub
+            </a>
+            <a href="https://glitch.com/" class="btn">
+                🌐 Acessar Glitch
+            </a>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instruções de Deploy</h3>
+            <ol>
+                <li><strong>Opção 1 - Remix Direto:</strong>
+                    <ul>
+                        <li>Clique em "Remix no Glitch" acima</li>
+                        <li>Aguarde a importação automática</li>
+                        <li>Configure as variáveis de ambiente</li>
+                    </ul>
+                </li>
+                <li><strong>Opção 2 - Via GitHub:</strong>
+                    <ul>
+                        <li>Faça push deste projeto para GitHub</li>
+                        <li>No Glitch: New Project → Import from GitHub</li>
+                        <li>Cole a URL do seu repositório</li>
+                    </ul>
+                </li>
+                <li><strong>Opção 3 - Upload Manual:</strong>
+                    <ul>
+                        <li>Baixe o arquivo glitch-deploy.zip</li>
+                        <li>Crie novo projeto no Glitch</li>
+                        <li>Upload dos arquivos via interface</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div class="warning">
+            <h4>⚠️ Configuração Obrigatória</h4>
+            <p>Após o deploy, configure estas variáveis em <strong>Tools → Environment</strong>:</p>
+            <div class="code">
+WEB_USERNAME=seu_usuario<br>
+WEB_PASSWORD=sua_senha_segura<br>
+NODE_ENV=production<br>
+PROJECT_NAME=seu-projeto
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>🎯 URLs Importantes</h3>
+            <p>Após publicar, seu projeto terá:</p>
+            <ul>
+                <li><strong>Home:</strong> https://SEU-PROJETO.glitch.me/</li>
+                <li><strong>Dashboard:</strong> https://SEU-PROJETO.glitch.me/dashboard</li>
+                <li><strong>API Health:</strong> https://SEU-PROJETO.glitch.me/api/health</li>
+                <li><strong>Métricas:</strong> https://SEU-PROJETO.glitch.me/api/metrics</li>
+                <li><strong>Logs:</strong> https://SEU-PROJETO.glitch.me/logs</li>
+            </ul>
+        </div>
+        
+        <div class="instructions">
+            <h3>✅ Checklist de Validação</h3>
+            <ul>
+                <li>☐ Projeto importado com sucesso</li>
+                <li>☐ Variáveis de ambiente configuradas</li>
+                <li>☐ Credenciais alteradas (admin/admin123)</li>
+                <li>☐ Página inicial carregando</li>
+                <li>☐ Dashboard acessível com login</li>
+                <li>☐ APIs respondendo (/api/health)</li>
+                <li>☐ Logs funcionando</li>
+                <li>☐ Métricas sendo coletadas</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎉 Pronto!</strong> Seu projeto DevOps estará online em minutos</p>
+            <p>Documentação completa: README.md | Suporte: GLITCH_DEPLOY.md</p>
+        </div>
+    </div>
+</body>
+</html>
